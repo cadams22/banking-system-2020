@@ -10,6 +10,8 @@ class Account:
 		self.__accountId = accountId
 		self.__pin = pin
 		self.__balance = balance 
+		# keep track of transaction history
+		self.__transactionHistory = []
 
 	# public functions for getters and setters
 	# we do not allow a user to modify their account ID (getter no setter)
@@ -27,3 +29,9 @@ class Account:
 
 	def setBalance(self,balance):
 		self.__balance = balance
+
+	def getTransactionHistory(self):
+		return self.__transactionHistory
+
+	def appendToTransactionHistory(self,transaction):
+		self.__transactionHistory.append(transaction)

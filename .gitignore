@@ -12,4 +12,5 @@ pom.xml.asc
 .lein-failures
 .nrepl-port
 .cpcache/
-__pycache__/*
+*/__pycache__/*
+*/__pycache__
