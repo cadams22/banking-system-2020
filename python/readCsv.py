@@ -1,10 +1,15 @@
 # using the pandas library to read the csv file into a dataframe
 # may move this to a utilities.py file since csv reading is useful for many purposes
+import os
 import pandas as pd
 from account import Account
 
-# i keep the csv here
-csvPath = '../csv/'
+# making sure we get the full path to this current file
+# just doing ../csv causes problems when you run this script from a different directory
+currentDirectory = os.path.dirname(__file__)
+
+# i keep the csv in path ../csv/ relative to the location of this script
+csvPath = os.path.join(currentDirectory, '../csv/')
 # this is the name of the csv I am 
 csvFilename = 'bankingInfo.csv'
 # full path for the csv

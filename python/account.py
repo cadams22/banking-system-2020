@@ -4,6 +4,9 @@ class Account:
 	# if no balance is provided, assume the account has no balance
 	def __init__(self,accountId,pin=None,balance=0.00):
 		# making all attributes private using __ prefix
+		# typically i would make these public in alignment with UAP https://en.wikipedia.org/wiki/Uniform_access_principle
+		# but i want to restrict access to setting and getting accountId. therefore, i kept it consistent
+		# everything is private 
 		self.__accountId = accountId
 		self.__pin = pin
 		self.__balance = balance 
