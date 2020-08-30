@@ -13,9 +13,14 @@ from readCsvIntoAccounts import ReadCsvIntoAccounts
 
 class TestReadCsvIntoAccounts(unittest.TestCase):
 
+	def setUp(self):
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		relativePath = "csvtest/"
+		self.path = os.path.abspath(os.path.join(dir_path, relativePath))
+
 	# testing a file with just headers
 	def testHeadersCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='headers.csv',relativePath='../unittest/csvtest/')
+		classObject = ReadCsvIntoAccounts(filename='/headers.csv',path=self.path)
 
 		df = classObject.readCsvIntoDf()
 
@@ -29,13 +34,13 @@ class TestReadCsvIntoAccounts(unittest.TestCase):
 	# testing an empty file 
 	# negative test: this should cause an EmptyDataError to be raised
 	def testEmptyCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='empty.csv',relativePath='../unittest/csvtest/')
+		classObject = ReadCsvIntoAccounts(filename='/empty.csv',path=self.path)
 
 		self.assertRaises(pd.errors.EmptyDataError, classObject.readCsvIntoDf)
 
 	# testing the csv sent to me
 	def testBankingInfoSampleCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='bankingInfoSample.csv',relativePath='../unittest/csvtest/')
+		classObject = ReadCsvIntoAccounts(filename='/bankingInfoSample.csv',path=self.path)
 
 		df = classObject.readCsvIntoDf()
 

@@ -1,4 +1,11 @@
 # banking-system-2020
+Banking system questions:
+> Am I assuming this program lives on one computer locally? or could it be distributed across several computers?
+To elaborate, I wrote this like this bank has one ATM. But should I write this so that the bank could have several ATMs?
+With my existing solution, I do not need a database. But if there needs to be one system of record for many ATMs (my balance on ATM1 should be the same as my balance on ATM2), then I would store the account info in a database vs a Python dictionary
+> Do we need to constantly check if the person is authorized or just check authorization before each transaction? I can do either but figuring out what is necessary
+>If the user is overdrawn and then makes a deposit that makes their balance $0 or more, are they no longer overdrawn? or are they overdrawn forever? is there a very specific way to stop an account from being overdrawn?
+
 I am writing a banking system to cover the following requirements:
 
 ATM design problem

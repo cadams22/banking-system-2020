@@ -3,11 +3,11 @@ import pandas as pd
 from account import Account
 
 class ReadCsvIntoAccounts:
-	def __init__(self,filename,relativePath='../csv/'):
+	def __init__(self,filename,path):
 
 		# i keep the csv in path ../csv/ relative to the location of this script
 		# but i allow this to be configurable by the caller of this class
-		self.relativePath = relativePath
+		self.path = path
 		# this is the name of the csv I am 
 		self.filename = filename
 
@@ -21,7 +21,7 @@ class ReadCsvIntoAccounts:
 		# specifying that the first line of this file is a header
 		# todo: how do we want to handle duplicate account ids? override?
 		try: 
-			df = utilities.readCsv(relativePath=self.relativePath,filename=self.filename)
+			df = utilities.readCsv(relativePath=self.path,filename=self.filename)
 		except pd.errors.EmptyDataError as e:
 			print('Empty CSV file passed in. Please pass in a file that has, at a minimum, headers')
 			raise e

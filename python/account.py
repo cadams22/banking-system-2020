@@ -10,6 +10,7 @@ class Account:
 		self.__accountId = accountId
 		self.__pin = pin
 		self.__balance = balance 
+		self.__overdrawn = False
 		# keep track of transaction history
 		self.__transactionHistory = []
 
@@ -30,8 +31,15 @@ class Account:
 	def setBalance(self,balance):
 		self.__balance = balance
 
+	def getOverdrawnStatus(self):
+		return self.__overdrawn
+
+	def setOverdrawnStatus(self,overdrawn):
+		self.__overdrawn
+
 	def getTransactionHistory(self):
 		return self.__transactionHistory
 
-	def appendToTransactionHistory(self,transaction):
-		self.__transactionHistory.append(transaction)
+	def addTransactionToHistory(self,transaction):
+		# adding the most recent transaction to the start of the list (index 0)
+		self.__transactionHistory.insert(0, transaction)

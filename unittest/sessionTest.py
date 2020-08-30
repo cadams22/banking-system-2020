@@ -15,7 +15,11 @@ from readCsvIntoAccounts import ReadCsvIntoAccounts
 class TestReadCsvIntoAccounts(unittest.TestCase):
 
 	def setUp(self):
-		classObject = ReadCsvIntoAccounts(filename='bankingInfoSample.csv',relativePath='../unittest/csvtest/')
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		relativePath = "csvtest/"
+		self.path = os.path.abspath(os.path.join(dir_path, relativePath))
+
+		classObject = ReadCsvIntoAccounts(filename='/bankingInfoSample.csv',path=self.path)
 		df = classObject.readCsvIntoDf()
 		self.accounts = classObject.createAccountsUsingDf(df)
 
@@ -23,7 +27,7 @@ class TestReadCsvIntoAccounts(unittest.TestCase):
 	# 0 represents no user currently logged in
 	def testAuthorizationTimeAtStart(self):
 		testSession = Session()
-		self.assertEqual(testSession.checkAuthorizationStatus(),0)
+		self.assertEqual(testSession.checkAuthorizationStatus(),False)
 
 	# check authorization after login - this should return 1 - yes, the user is currently authorized
 	def testAuthorizationTimeAfterLogin(self):
@@ -33,11 +37,7 @@ class TestReadCsvIntoAccounts(unittest.TestCase):
 		testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
 
 		# check that after login, the user is currently authorized
-		self.assertEqual(testSession.checkAuthorizationStatus(),1)
-		# check that after login, the user is currently authorized when we manually pass in accountId
-		self.assertEqual(testSession.checkAuthorizationStatus(accountId=accountId),1)
-		# check that for another arbitrary account, this returns 2, another user is authorized
-		self.assertEqual(testSession.checkAuthorizationStatus(accountId=-9999),2)
+		self.assertEqual(testSession.checkAuthorizationStatus(),True)
 		
 	def testGetBalance(self):
 		testSession = Session()
