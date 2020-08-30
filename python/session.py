@@ -37,7 +37,7 @@ class Session:
 		else:
 			print("authorizationTime is null")
 		# if the current time is less than previous authorization time + 120 seconds return True
-		if self.getAuthorizationTime() is not None and datetime.now() < self.getAuthorizationTime() + timedelta(seconds=120):
+		if self.getAuthorizationTime() is not None and datetime.now() <= self.getAuthorizationTime() + timedelta(seconds=120):
 			# good news. this user is still authorized
 			# we reset the authorization time
 			self.setAuthorizationTime()
