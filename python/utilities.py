@@ -17,3 +17,13 @@ def readCsv(relativePath,filename):
 	df = pd.read_csv(fileWithPath)
 
 	return df
+
+def isInt(string):
+    try: 
+        int(string)
+        return True
+    except ValueError:
+        return False
+
+def displayCash(cash):
+	return "{:.2f}".format(cash)

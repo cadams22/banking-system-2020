@@ -35,7 +35,7 @@ class Account:
 		return self.__overdrawn
 
 	def setOverdrawnStatus(self,overdrawn):
-		self.__overdrawn
+		self.__overdrawn = overdrawn
 
 	def getTransactionHistory(self):
 		return self.__transactionHistory

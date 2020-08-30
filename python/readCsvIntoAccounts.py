@@ -33,7 +33,7 @@ class ReadCsvIntoAccounts:
 
 		# iterating through the dataframe and keeping track of info for each account
 		for index, row in df.iterrows(): 
-			accountId = int(row["ACCOUNT_ID"])
+			accountId = str(int(row["ACCOUNT_ID"]))
 			pin = int(row["PIN"])
 			balance = float(row["BALANCE"])
 

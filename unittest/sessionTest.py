@@ -1,7 +1,6 @@
 import unittest
 import os
 import sys
-import time
 
 currentDirectory = os.path.dirname(__file__)
 relativePath = '../python/'
@@ -12,7 +11,7 @@ sys.path.insert(1, path)
 from session import Session
 from readCsvIntoAccounts import ReadCsvIntoAccounts
 
-class TestReadCsvIntoAccounts(unittest.TestCase):
+class TestSession(unittest.TestCase):
 
 	def setUp(self):
 		dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -46,20 +45,6 @@ class TestReadCsvIntoAccounts(unittest.TestCase):
 		testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
 
 		self.assertEqual(testSession.getBalance(self.accounts),self.accounts[accountId].getBalance())
-
-	def testGetBalanceAfterExpired(self):
-		balance = None
-
-		testSession = Session()
-		# get first item in the accounts dictionary
-		accountId = list(self.accounts.keys())[0]
-		testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
-
-		# letting authorization expire
-		time.sleep(120)
-
-		balance = testSession.getBalance(self.accounts)
-		self.assertIsNone(balance)
 
 
 

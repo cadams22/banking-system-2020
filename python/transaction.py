@@ -1,4 +1,5 @@
 from datetime import datetime
+import utilities
 
 class Transaction: 
 	def __init__(self,transactionAmount=None,remainingBalance=None):
@@ -9,16 +10,16 @@ class Transaction:
 		self.__remainingBalance = remainingBalance
 
 	def __str__(self):
-		return f"{self.getTransactionDate()} {self.getTransactionTime()} {self.getTransactionAmount()} {self.getRemainingBalance()}"
+		return f"{self.getTransactionDate()} {self.getTransactionTime()} {utilities.displayCash(self.getTransactionAmount())} {utilities.displayCash(self.getRemainingBalance())}"
 
-	def getTransactionDate():
+	def getTransactionDate(self):
 		return self.__date
 
-	def getTransactionTime():
+	def getTransactionTime(self):
 		return self.__time
 
-	def getTransactionAmount():
+	def getTransactionAmount(self):
 		return self.__transactionAmount
 
-	def getRemainingBalance():
+	def getRemainingBalance(self):
 		return self.__remainingBalance

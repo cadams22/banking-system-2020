@@ -7,11 +7,6 @@ class Session:
 		self.__currentAccountId = currentAccountId
 		self.__authorizationTime = None
 
-	def __exit__(self):
-		self.__transactions = {}
-		self.__currentAccountId = None
-		self.__authorizationTime = None
-
 	def appendTransaction(self,transaction):
 		# keeping track of each individual transaction for a given session
 		self.__transactions.append(transaction)
@@ -36,8 +31,13 @@ class Session:
 	# if the user is still authorized, return True. otherwise, return False
 	# the user is still authorized if there has been account activity in the last 120 seconds 
 	def checkAuthorizationStatus(self):
+		print(datetime.now())
+		if self.getAuthorizationTime() is not None:
+			print(self.getAuthorizationTime() + timedelta(seconds=120))
+		else:
+			print("authorizationTime is null")
 		# if the current time is less than previous authorization time + 120 seconds return True
-		if datetime.now() <= self.getAuthorizationTime() + timedelta(seconds=120):
+		if self.getAuthorizationTime() is not None and datetime.now() < self.getAuthorizationTime() + timedelta(seconds=120):
 			# good news. this user is still authorized
 			# we reset the authorization time
 			self.setAuthorizationTime()
@@ -59,7 +59,6 @@ class Session:
 		
 	# the controller will call this after fetching the latest activity on the classes
 	def getBalance(self,accounts):
-		if self.checkAuthorizationStatus():
 			# i get the latest account info, search for the current authorized account
 			# and return the balance using the getter from the Account class
 			return accounts[self.getCurrentAccountId()].getBalance()
