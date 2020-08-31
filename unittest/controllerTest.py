@@ -10,16 +10,17 @@ path = os.path.join(currentDirectory, relativePath)
 sys.path.insert(1, path)
 
 from controller import Controller
-from readCsvIntoAccounts import ReadCsvIntoAccounts
+from csvReader import CsvReader
 from session import Session
 
 class TestController(unittest.TestCase):
+	#todo: enhance by adding tests to validate the returned strings
 	def setUp(self):
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		relativePath = "../csv/"
 		self.path = os.path.abspath(os.path.join(dir_path, relativePath))
 
-		csvReader = ReadCsvIntoAccounts(filename='/bankingInfo.csv',path=self.path)
+		csvReader = CsvReader(filename='/bankingInfo.csv',path=self.path)
 		df = csvReader.readCsvIntoDf()
 		self.accounts = csvReader.createAccountsUsingDf(df)
 
@@ -28,10 +29,10 @@ class TestController(unittest.TestCase):
 
 		self.assertEqual(len(controller.getLatestAccountInfo()),4)
 
-	def testLogin(self):
+	def testAuthorize(self):
 		controller = Controller()
 		accountId = list(self.accounts.keys())[0]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 
 		# check that after login, the user is currently authorized
 		self.assertEqual(controller.getCurrentSession().checkAuthorizationStatus(),True)
@@ -39,7 +40,7 @@ class TestController(unittest.TestCase):
 	def testBalance(self):
 		controller = Controller()
 		accountId = list(self.accounts.keys())[0]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 		balance = controller.balance()
 
 		# check that the controller is getting the right balance
@@ -50,7 +51,7 @@ class TestController(unittest.TestCase):
 
 		# get first item in the accounts dictionary
 		accountId = list(self.accounts.keys())[0]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 		controller.deposit(value=20)
 
 		# letting authorization expire
@@ -66,36 +67,64 @@ class TestController(unittest.TestCase):
 		withdrawalHappened = controller.withdraw(value=100)
 		self.assertFalse(withdrawalHappened)
 
-	def testDeposit(self):
-		value = 1
-
+	def testWithdrawlNotMultipleOf20(self):
 		controller = Controller()
-		accountId = list(self.accounts.keys())[0]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
-		oldBalance = controller.getLatestAccountInfo()[accountId].getBalance()
-		controller.deposit(value=value)
-		balance = controller.balance()
 
-		# check that after deposit, the balance equals old balance minus one
-		self.assertEqual(balance,oldBalance+1)
+		# get first item in the accounts dictionary
+		accountId = list(self.accounts.keys())[3]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 
-	def testWithdrawal(self):
-		value = 20
+		withdrawalHappened = controller.withdraw(value=101)
+		self.assertFalse(withdrawalHappened)
 
+	def testOverdrafts(self):
 		controller = Controller()
+
+		# get first item in the accounts dictionary
+		accountId = list(self.accounts.keys())[3]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+
+		withdrawalHappened = controller.withdraw(value=100)
+		self.assertTrue(withdrawalHappened)
+
+		# controller should prevent the user from withdrawing from an overdrafted account
+		withdrawalHappened = controller.withdraw(value=100)
+		self.assertFalse(withdrawalHappened)
+
+		# but when we deposit money to make the account balance positive
+		# the account should no longer be overdrafted
+		# and a subsequent withdrawal should occur successfully
+		controller.deposit(value=100)
+		withdrawalHappened = controller.withdraw(value=100)
+		self.assertTrue(withdrawalHappened)
+
+	def testEmptyAtm(self):
+		cash = 10000
+		controller = Controller(startingCash=cash)
+
+		# get first item in the accounts dictionary
 		accountId = list(self.accounts.keys())[1]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
-		oldBalance = controller.getLatestAccountInfo()[accountId].getBalance()
-		controller.withdraw(value=value)
-		balance = controller.getLatestAccountInfo()[accountId].getBalance()
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 
-		# check that after deposit, the balance equals old balance minus one
-		self.assertEqual(balance,oldBalance-value)
+		oldBalance = controller.balance()
+		withdrawalHappened = controller.withdraw(value=cash+20)
+		self.assertTrue(withdrawalHappened)
+		self.assertEqual(controller.balance(),oldBalance-cash)
+
+		# controller should prevent the user from withdrawing from an overdrafted account
+		withdrawalHappened = controller.withdraw(value=100)
+		self.assertFalse(withdrawalHappened)
+
+		# but when we deposit money to make the atm have cash=1000
+		# the atm should be able to withdraw the rest of the money
+		controller.deposit(value=100)
+		withdrawalHappened = controller.withdraw(value=100)
+		self.assertTrue(withdrawalHappened)
 
 	def testLogout(self):
 		controller = Controller()
 		accountId = list(self.accounts.keys())[0]
-		controller.login(accountId=accountId,pin=self.accounts[accountId].getPin())
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
 		controller.deposit(value=20)
 
 		controller.logout()
@@ -111,6 +140,38 @@ class TestController(unittest.TestCase):
 		self.assertIsNone(transactionHistory)
 		self.assertFalse(depositHappened)
 		self.assertFalse(withdrawalHappened)
+
+	def testSwitchingBetweenAccounts(self):
+		controller = Controller()
+		accountId = list(self.accounts.keys())[0]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		oldBalance = controller.balance()
+		depositValue = 40
+		withdrawalValue = 20
+		controller.deposit(value=depositValue)
+		controller.withdraw(value=withdrawalValue)
+		newBalance = oldBalance + depositValue - withdrawalValue
+		balance = controller.balance()
+		self.assertEqual(balance,newBalance)
+		history = controller.history()
+		self.assertEqual(len(history),2)
+		controller.logout()
+
+		accountId = list(self.accounts.keys())[1]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		beforeBalance = controller.balance()
+		controller.deposit(value=depositValue)
+		controller.withdraw(value=withdrawalValue)
+		balance = controller.balance()
+		self.assertEqual(balance,beforeBalance + depositValue - withdrawalValue)
+		history = controller.history()
+		self.assertEqual(len(history),2)
+		controller.logout()
+
+		accountId = list(self.accounts.keys())[0]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		balance = controller.balance()
+		self.assertEqual(balance,oldBalance + depositValue - withdrawalValue)
 
 if __name__ == '__main__':
 	unittest.main()

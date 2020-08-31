@@ -9,9 +9,9 @@ path = os.path.join(currentDirectory, relativePath)
 
 sys.path.insert(1, path)
 
-from readCsvIntoAccounts import ReadCsvIntoAccounts
+from csvReader import CsvReader
 
-class TestReadCsvIntoAccounts(unittest.TestCase):
+class TestCsvReader(unittest.TestCase):
 
 	def setUp(self):
 		dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -20,34 +20,34 @@ class TestReadCsvIntoAccounts(unittest.TestCase):
 
 	# testing a file with just headers
 	def testHeadersCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='/headers.csv',path=self.path)
+		csvReader = CsvReader(filename='/headers.csv',path=self.path)
 
-		df = classObject.readCsvIntoDf()
+		df = csvReader.readCsvIntoDf()
 
 		#making sure there are no errors and an empty dataframe is created
 		self.assertEqual(len(df),0)
 
-		dictionary = classObject.createAccountsUsingDf(df)
+		dictionary = csvReader.createAccountsUsingDf(df)
 		#making sure there are no errors and an empty dictionary of account info is created
 		self.assertEqual(len(dictionary),0)
 
 	# testing an empty file 
 	# negative test: this should cause an EmptyDataError to be raised
 	def testEmptyCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='/empty.csv',path=self.path)
+		csvReader = CsvReader(filename='/empty.csv',path=self.path)
 
-		self.assertRaises(pd.errors.EmptyDataError, classObject.readCsvIntoDf)
+		self.assertRaises(pd.errors.EmptyDataError, csvReader.readCsvIntoDf)
 
 	# testing the csv sent to me
 	def testBankingInfoSampleCsv(self):
-		classObject = ReadCsvIntoAccounts(filename='/bankingInfoSample.csv',path=self.path)
+		csvReader = CsvReader(filename='/bankingInfoSample.csv',path=self.path)
 
-		df = classObject.readCsvIntoDf()
+		df = csvReader.readCsvIntoDf()
 
 		#we have 4 accounts in the CSV file
 		self.assertEqual(len(df),4)
 
-		dictionary = classObject.createAccountsUsingDf(df)
+		dictionary = csvReader.createAccountsUsingDf(df)
 		#making sure there are no errors and an empty dictionary of account info is created
 		self.assertEqual(len(dictionary),4)
 

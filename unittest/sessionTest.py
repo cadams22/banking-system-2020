@@ -9,7 +9,8 @@ path = os.path.join(currentDirectory, relativePath)
 sys.path.insert(1, path)
 
 from session import Session
-from readCsvIntoAccounts import ReadCsvIntoAccounts
+from csvReader import CsvReader
+from atm import Atm
 
 class TestSession(unittest.TestCase):
 
@@ -18,9 +19,9 @@ class TestSession(unittest.TestCase):
 		relativePath = "csvtest/"
 		self.path = os.path.abspath(os.path.join(dir_path, relativePath))
 
-		classObject = ReadCsvIntoAccounts(filename='/bankingInfoSample.csv',path=self.path)
-		df = classObject.readCsvIntoDf()
-		self.accounts = classObject.createAccountsUsingDf(df)
+		csvReader = CsvReader(filename='/bankingInfoSample.csv',path=self.path)
+		df = csvReader.readCsvIntoDf()
+		self.accounts = csvReader.createAccountsUsingDf(df)
 
 	# at the start of the session, the authorization time should be none and authorization status should be 0
 	# 0 represents no user currently logged in
@@ -45,6 +46,46 @@ class TestSession(unittest.TestCase):
 		testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
 
 		self.assertEqual(testSession.getBalance(self.accounts),self.accounts[accountId].getBalance())
+
+	def testDeposit(self):
+		value = 1
+		atm = Atm()
+
+		testSession = Session()
+		accountId = list(self.accounts.keys())[0]
+		testSession.authorize(accounts=self.accounts,accountId=accountId,pin=self.accounts[accountId].getPin())
+		oldBalance = self.accounts[accountId].getBalance()
+		testSession.deposit(accounts=self.accounts,atm=atm,value=value)
+		balance = testSession.getBalance(accounts=self.accounts)
+
+		# check that after deposit, the return value equals the passed-in value. this means the deposit was successful
+		self.assertEqual(balance,oldBalance+value)
+
+	def testWithdrawal(self):
+		value = 20
+		atm = Atm()
+
+		testSession = Session()
+		accountId = list(self.accounts.keys())[3]
+		testSession.authorize(accounts=self.accounts,accountId=accountId,pin=self.accounts[accountId].getPin())
+		returnValue = testSession.withdraw(accounts=self.accounts,atm=atm,value=value)
+		balance = testSession.getBalance(accounts=self.accounts)
+
+		# check that after withdrawal, the balance equals old balance minus value
+		self.assertEqual(returnValue,value)
+
+	def testWithdrawalOverdraft(self):
+		value = 100
+		atm = Atm()
+
+		testSession = Session()
+		accountId = list(self.accounts.keys())[0]
+		testSession.authorize(accounts=self.accounts,accountId=accountId,pin=self.accounts[accountId].getPin())
+		returnValue = testSession.withdraw(accounts=self.accounts,atm=atm,value=value)
+		balance = testSession.getBalance(accounts=self.accounts)
+
+		# check that after withdrawal, the balance equals old balance minus value minus $5 overdraft fee
+		self.assertEqual(returnValue,value+5)
 
 
 

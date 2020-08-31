@@ -12,6 +12,9 @@ class Transaction:
 	def __str__(self):
 		return f"{self.getTransactionDate()} {self.getTransactionTime()} {utilities.displayCash(self.getTransactionAmount())} {utilities.displayCash(self.getRemainingBalance())}"
 
+	def __repr__(self):
+		return self.__str__()
+
 	def getTransactionDate(self):
 		return self.__date
 

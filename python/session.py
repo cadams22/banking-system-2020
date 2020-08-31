@@ -1,15 +1,16 @@
-from readCsvIntoAccounts import ReadCsvIntoAccounts
 from datetime import datetime, timedelta
+from transaction import Transaction
 
 class Session:
 	def __init__(self,currentAccountId=None):
-		self.__transactions = {}
 		self.__currentAccountId = currentAccountId
 		self.__authorizationTime = None
 
-	def appendTransaction(self,transaction):
-		# keeping track of each individual transaction for a given session
-		self.__transactions.append(transaction)
+	def __str__(self):
+		return f"Session:{{currentAccountId:{self.getCurrentAccountId()}, authorizationTime:{self.getAuthorizationTime()}}}"
+
+	def __repr__(self):
+		return self.__str__()
 
 	def getCurrentAccountId(self):
 		return self.__currentAccountId
@@ -31,13 +32,8 @@ class Session:
 	# if the user is still authorized, return True. otherwise, return False
 	# the user is still authorized if there has been account activity in the last 120 seconds 
 	def checkAuthorizationStatus(self):
-		print(datetime.now())
-		if self.getAuthorizationTime() is not None:
-			print(self.getAuthorizationTime() + timedelta(seconds=120))
-		else:
-			print("authorizationTime is null")
 		# if the current time is less than previous authorization time + 120 seconds return True
-		if self.getAuthorizationTime() is not None and datetime.now() <= self.getAuthorizationTime() + timedelta(seconds=120):
+		if self.getAuthorizationTime() is not None and datetime.now() <= self.getAuthorizationTime() + timedelta(seconds=119):
 			# good news. this user is still authorized
 			# we reset the authorization time
 			self.setAuthorizationTime()
@@ -59,6 +55,83 @@ class Session:
 		
 	# the controller will call this after fetching the latest activity on the classes
 	def getBalance(self,accounts):
-			# i get the latest account info, search for the current authorized account
-			# and return the balance using the getter from the Account class
-			return accounts[self.getCurrentAccountId()].getBalance()
+		# i get the latest account info, search for the current authorized account
+		# and return the balance using the getter from the Account class
+		return accounts[self.getCurrentAccountId()].getBalance()
+
+	def deposit(self,accounts,atm,value):
+		if value < 0:
+			print("You must deposit a value greater than 0")
+			return
+		if value == 0:
+			print("Please deposit a non-zero amount of money")
+			return 
+
+		balance = self.getBalance(accounts=accounts)
+		# new account balance = existing balance plus freshly-deposited cash
+		newBalance = balance + value
+		# the atm now has more money available
+		atm.setCurrentCash(cash=atm.getCurrentCash()+value)
+
+		# setting the account balance to the new balance
+		accounts[self.getCurrentAccountId()].setBalance(balance=newBalance)
+
+		# if account is overdrawn and the newBalance is greater than or equal to zero
+		# then the account is no longer overdrawn
+		if accounts[self.getCurrentAccountId()].getOverdrawnStatus():
+			accounts[self.getCurrentAccountId()].setOverdrawnStatus(False)
+			
+		# creating a new transaction for this deposit and adding it to the account's txn history
+		transaction = Transaction(transactionAmount=value,remainingBalance=newBalance)
+		accounts[self.getCurrentAccountId()].addTransactionToHistory(transaction)
+
+		return value
+
+	def withdraw(self,accounts,atm,value):
+		atmCurrentCash = atm.getCurrentCash()
+		overdrafting = False
+
+		balance = self.getBalance(accounts=accounts)
+		# assuming ATM has enough cash for the transaction
+		atmHadRequiredCash = True
+
+		# if the account is overdrafting, we remove an additional $5 from the account 
+		if balance - value < 0: 
+			value += 5
+			overdrafting = True
+
+		# the new currentCash balance of the ATM is the old value minus the value withdrawn
+		atmNewCurrentCash = atmCurrentCash - value
+
+		# ...but what if this value is less than zero?
+		if atmNewCurrentCash < 0: 
+			# the ATM does not have enough cash for the transaction
+			atmHasRequiredCash = False
+			# the value withdrawn equals to all the money left in the ATM
+			value = atmCurrentCash
+
+			# maybe i'm a nice banker
+			# but if the ATM cannot afford to let the user overdraft,
+			# i'm going to remove the $5 charge for them :)
+			if overdrafting and balance - value >= 0:
+				overdrafting = False
+
+			#print("Unable to dispense full amount requested at this time.")
+
+		newBalance = balance - value
+
+		atm.setCurrentCash(cash=atm.getCurrentCash()-value)
+		accounts[self.getCurrentAccountId()].setBalance(balance=newBalance)
+
+		if overdrafting:
+			accounts[self.getCurrentAccountId()].setOverdrawnStatus(overdrawn=True)
+
+		# creating a new transaction for this withdrawal and adding it to the account's txn history
+		transaction = Transaction(transactionAmount=-value,remainingBalance=newBalance)
+		accounts[self.getCurrentAccountId()].addTransactionToHistory(transaction)
+
+		return value
+
+	def history(self,accounts):
+		return accounts[self.getCurrentAccountId()].getTransactionHistory()
+

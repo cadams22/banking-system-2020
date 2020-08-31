@@ -2,7 +2,7 @@ import utilities
 import pandas as pd
 from account import Account
 
-class ReadCsvIntoAccounts:
+class CsvReader:
 	def __init__(self,filename,path):
 
 		# i keep the csv in path ../csv/ relative to the location of this script
@@ -10,6 +10,12 @@ class ReadCsvIntoAccounts:
 		self.path = path
 		# this is the name of the csv I am 
 		self.filename = filename
+
+	def __str__(self):
+		return f"CsvReader:{{path:{self.path},filename:{self.filename}}}"
+
+	def __repr__(self):
+		return self.__str__()
 
 	# purposefully keeping the names and concepts of these functions very loose
 	# to encourage reuse
