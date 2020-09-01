@@ -259,7 +259,7 @@ if __name__ == "__main__":
 			if len(wordList) != 1:
 				print(help(keyword=wordList[0]))
 				continue
-			controller.balance()
+			print(controller.balance())
 		elif wordList[0] == "history":
 			if len(wordList) != 1:
 				print(help(keyword=wordList[0]))
