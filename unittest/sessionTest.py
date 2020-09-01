@@ -34,10 +34,26 @@ class TestSession(unittest.TestCase):
 		testSession = Session()
 		# get first item in the accounts dictionary
 		accountId = list(self.accounts.keys())[0]
-		testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
+		authorized = testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin(),accounts=self.accounts)
+
+		# check that the function returns True, meaning authorization was successful
+		self.assertEqual(authorized,True)
 
 		# check that after login, the user is currently authorized
-		self.assertEqual(testSession.checkAuthorizationStatus(),True)
+		self.assertEqual(testSession.checkAuthorizationStatus(),authorized)
+
+	# check authorization fails if the user provides the wrong pin
+	def testFailedAuthorization(self):
+		testSession = Session()
+		# get first item in the accounts dictionary
+		accountId = list(self.accounts.keys())[0]
+		# adding 1 to the actual pin. For example, 7386 becomes 7387
+		authorized = testSession.authorize(accountId=accountId,pin=self.accounts[accountId].getPin()+1,accounts=self.accounts)
+		# check that the function returns False, meaning authorization failed
+		self.assertEqual(authorized,False)
+
+		# check that after that failed login, the user is currently not authorized
+		self.assertEqual(testSession.checkAuthorizationStatus(),authorized)
 		
 	def testGetBalance(self):
 		testSession = Session()
@@ -81,11 +97,15 @@ class TestSession(unittest.TestCase):
 		testSession = Session()
 		accountId = list(self.accounts.keys())[0]
 		testSession.authorize(accounts=self.accounts,accountId=accountId,pin=self.accounts[accountId].getPin())
+		oldBalance = testSession.getBalance(accounts=self.accounts)
 		returnValue = testSession.withdraw(accounts=self.accounts,atm=atm,value=value)
 		balance = testSession.getBalance(accounts=self.accounts)
 
 		# check that after withdrawal, the balance equals old balance minus value minus $5 overdraft fee
-		self.assertEqual(returnValue,value+5)
+		self.assertEqual(returnValue,value)
+		self.assertEqual(balance,oldBalance-value-5)
+		# account should be overdrawn
+		self.assertTrue(self.accounts[testSession.getCurrentAccountId()].getOverdrawnStatus())
 
 
 

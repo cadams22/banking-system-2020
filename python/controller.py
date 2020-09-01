@@ -47,80 +47,95 @@ class Controller:
 	# input: authorize <account_id> <pin>
 	def authorize(self,accountId,pin):
 		logging.debug(f"Controller at the start of login:{self}")
+		string = ""
+
+		if accountId not in self.getLatestAccountInfo().keys() :
+			string = "Authorization failed due to invalid accountId"
+			return string 
+
 		# if there is already a session with another user, I won't allow a fresh login 
 		if self.getCurrentSession().getCurrentAccountId() is not None and self.getCurrentSession().getCurrentAccountId() != accountId:
-			print("Another user is already authorized. Please try again later")
+			string = "Another user is already authorized. Please try again later"
 			logging.warning(f"AccountId {accountId} failed to log in since another user is already logged in")
-			return 
+			return string
 
 		# fresh session and authorize the user
-		self.getCurrentSession().authorize(accounts=self.getLatestAccountInfo(),accountId=accountId,pin=pin)
+		authorized = self.getCurrentSession().authorize(accounts=self.getLatestAccountInfo(),accountId=accountId,pin=pin)
+		if authorized:
+			string = f"{accountId} successfully authorized"
+		else:
+			string = "Authorization failed."
+
 		logging.debug(f"Controller at the end of login:{self}")
+		return string
 
 	# input: balance
 	def balance(self):
 		logging.debug(f"Controller at the start of balance:{self}")
+		string = ""
 		authorized = self.getCurrentSession().checkAuthorizationStatus()
 
 		if authorized: 
 			logging.info(f"AccountId {self.getCurrentSession().getCurrentAccountId()} successfully authorized to access their account balance")
 			balance = self.getCurrentSession().getBalance(accounts=self.getLatestAccountInfo())
-			print(f"Current balance: {utilities.displayCash(balance)}")
+			string = f"Current balance: {utilities.displayCash(balance)}"
 			logging.debug(f"Controller at the end of successful balance check:{self}")
-			return balance
 		else: 
-			print("Authorization required.")
+			string = "Authorization required."
 			logging.warning("Get balance failed because the current user is not authorized")
+
+		return string
 
 	# input: deposit <value>
 	def deposit(self,value):
 		logging.debug(f"Value:{value}, controller at the start of deposit:{self}")
+		string = ""
 		authorized = self.getCurrentSession().checkAuthorizationStatus()
 
 		if authorized: 
 			self.getCurrentSession().deposit(self.getLatestAccountInfo(),self.getAtm(),value)
 
-			# check and print new balance after deposit
-			self.balance()
+			# check and return new balance after deposit
+			string = self.balance()
 			logging.debug(f"Controller at the end of deposit:{self}")
-			return True
 		else:
-			print("Authorization required.")
+			string = "Authorization required."
 			logging.warning(f"Deposit failed because the current user is not authorized")
-			return False
+
+		return string
 
 	# input: withdraw <value>
 	def withdraw(self,value):
 		logging.debug(f"Value:{value}, controller at the start of deposit:{self}")
+		string = ""
 		authorized = self.getCurrentSession().checkAuthorizationStatus()
 
 		if authorized: 
 
 			# if the user is overdrawn, stop the user from making the withdrawal immediately
 			if self.getLatestAccountInfo()[self.getCurrentSession().getCurrentAccountId()].getOverdrawnStatus(): 
-				print(f"Your account is overdrawn! You may not make withdrawals at this time.")
 				logging.warning(f"AccountId {self.getCurrentSession().getCurrentAccountId()} attempted withdrawal with overdrawn accouunt. Balance={self.getCurrentSession().getBalance(accounts=self.getLatestAccountInfo())}")
-				return False
+				string = "Your account is overdrawn! You may not make withdrawals at this time."
+				return string
 
 			# if the ATM has no money, inform the user and end the transaction
 			# i won't be adding a transaction to transaction history for this
 			if self.getAtm().getCurrentCash() == 0: 
-				print(f"Unable to process your withdrawal at this time.")
 				logging.warning("Withdrawal was cancelled because the ATM is out of money")
-				return False
-
+				string = "Unable to process your withdrawal at this time."
+				return string
 			if value < 0:
-				print("You must request a withdrawal a value greater than 0")
 				logging.warning(f"Withdrawal value less than 0 was passed into withdrawal function: value={value}")
-				return False
+				string = "You must request a withdrawal a value greater than 0"
+				return string
 			if value == 0:
-				print("Please request a withdrawal of a non-zero amount of money")
 				logging.warning("Withdrawal value of 0 was passed into withdrawal function. Withdrawals must be greater than 0")
-				return False
+				string = "Please request a withdrawal of a non-zero amount of money"
+				return string
 			if value%20 != 0:
-				print(f"Withdrawal amount must be a multiple of $20")
 				logging.warning(f"A withdrawal value that is not a multiple of $20 was passed into withdrawal function: value={value}")
-				return False
+				string = f"Withdrawal amount must be a multiple of $20"
+				return string
 
 			# running the withdrawal and storing if the ATM had the required cash for the transaction
 			withdrawnValue = self.getCurrentSession().withdraw(accounts=self.getLatestAccountInfo(),atm=self.getAtm(),value=value)
@@ -129,60 +144,86 @@ class Controller:
 			newBalance = self.getCurrentSession().getBalance(accounts=self.getLatestAccountInfo())
 
 			# if the ATM didn't have enough money
-			if (withdrawnValue != value+5 and overdrafting) or (withdrawnValue != value and not overdrafting) :
-				print("Unable to dispense full amount requested at this time.")
+			if withdrawnValue != value :
+				string = "Unable to dispense full amount requested at this time.\n"
 
 			if overdrafting:
-				print(f"Amount dispensed: ${utilities.displayCash(value)}")
-				print(f"You have been charged an overdraft fee of $5. Current balance: {utilities.displayCash(newBalance)}")
+				string += f"Amount dispensed: ${utilities.displayCash(withdrawnValue)}\n"
+				string += f"You have been charged an overdraft fee of $5. Current balance: {utilities.displayCash(newBalance)}"
 			else: 
-				print(f"Amount dispensed: ${utilities.displayCash(value)}")
-				print(f"Current balance: {utilities.displayCash(newBalance)}")
+				string += f"Amount dispensed: ${utilities.displayCash(withdrawnValue)}\n"
+				string += self.balance()
 
 			logging.debug(f"Controller at the end of withdrawal:{self}")
-
-			return True
 		else:
-			print("Authorization required.")
+			string = "Authorization required."
 			logging.warning(f"Withdrawal failed because the current user is not authorized")
-			return False
+		
+		return string
 
 	# input: history
 	def history(self):
 		logging.debug(f"Controller at the start of deposit:{self}")
+		string = ""
 		authorized = self.getCurrentSession().checkAuthorizationStatus() 
 
 		if authorized:
 			transactionHistory = self.getCurrentSession().history(accounts=self.getLatestAccountInfo())
 			if len(transactionHistory) is None:
-				print("No history found")
+				string = "No history found"
 			else: 
 				for transaction in transactionHistory: 
-					print(transaction)
-			return transactionHistory
+					string += str(transaction)+"\n"
 		else:
-			print("Authorization required.")
+			string = "Authorization required."
+
+		return string
 
 
 	# input: logout
 	def logout(self):
 		logging.debug(f"Controller at the start of logout:{self}")
+		string=""
 		wasAuthorized = self.getCurrentSession().checkAuthorizationStatus()
 
 		# user was authorized
 		if wasAuthorized: 
 			accountId = self.getCurrentSession().getCurrentAccountId()
 			self.setCurrentSession(currentSession=Session())
-			print(f"Account {accountId} logged out.")
+			string = f"Account {accountId} logged out."
 			logging.debug(f"Controller at the end of logout:{self}")
 		# if the user was not authorized
 		else:
-			print(f"No Account is currently authorized")
+			string = f"No Account is currently authorized"
 			logging.warning(f"Logout was terminated because no user is currently logged in")
 
-#todo: helper function to send help text back to the user
+		return string
+
+# helper function to send help text back to the user
 def help(keyword=None):
-	pass
+	startText = "Please enter the following format for "
+
+	helpText = {}
+	helpText["authorize"] = "authorize <account_id> <pin>"
+	helpText["logout"] = "logout"
+	helpText["balance"] = "balance"
+	helpText["history"] = "history"
+	helpText["deposit"] = "deposit <value>"
+	helpText["withdraw"] = "withdraw <value>"
+	if keyword is not None:
+		# all strings for a given keyword look the same
+		helpString = startString + keyword + ": " + helpText[keyword]
+		helpString += "\nFor additional syntax help, please type in the following command: help"
+
+	else:
+		helpString = "The following are the supported commands for this banking system:\n"
+		for key in helpText.keys():
+			helpString += helpText[key] + "\n"
+
+	return helpString
+
+
+
 
 # main handles all the text input
 if __name__ == "__main__":
@@ -201,7 +242,7 @@ if __name__ == "__main__":
 		# handling different input
 		if wordList[0] == "authorize":
 			if len(wordList) != 3:
-				print("Please enter the following format for authorize: authorize <account_id> <pin>")
+				print(help(keyword=wordList[0]))
 				continue
 			if not utilities.isInt(wordList[2]):
 				print("Pin needs to be an integer")
@@ -211,31 +252,33 @@ if __name__ == "__main__":
 			controller.authorize(accountId=accountId,pin=pin)
 		elif wordList[0] == "logout":
 			if len(wordList) != 1:
-				print("Please enter the following format for logout: logout")
+				print(help(keyword=wordList[0]))
 				continue
-			controller.logout()
+			print(controller.logout())
 		elif wordList[0] == "balance":
 			if len(wordList) != 1:
-				print("Please enter the following format for balance: balance")
+				print(help(keyword=wordList[0]))
 				continue
 			controller.balance()
 		elif wordList[0] == "history":
 			if len(wordList) != 1:
-				print("Please enter the following format for history: history")
+				print(help(keyword=wordList[0]))
 				continue
-			controller.history()
+			print(controller.history())
 		elif wordList[0] == "deposit":
 			if len(wordList) != 2:
-				print("Please enter the following format for deposit: deposit <value>")
+				print(help(keyword=wordList[0]))
 				continue
 			value = int(wordList[1])
 			controller.deposit(value=value)
 		elif wordList[0] == "withdraw":
 			if len(wordList) != 2:
-				print("Please enter the following format for withdraw: withdraw <value>")
+				print(help(keyword=wordList[0]))
 				continue
 			value = int(wordList[1])
-			controller.withdraw(value=value)
+			print(controller.withdraw(value=value))
+		elif wordList[0] == "help":
+			print(help())
 		elif wordList[0] == "end" :
 			break
 		else:

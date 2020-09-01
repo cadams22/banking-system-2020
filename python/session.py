@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 from transaction import Transaction
 
+# this class contains helpers related to a Session
+# i define the scope of a Session to be when a user logs in until they log on
+# when the user logs out, a new empty Session is created
 class Session:
 	def __init__(self,currentAccountId=None):
 		self.__currentAccountId = currentAccountId
@@ -41,17 +44,14 @@ class Session:
 		else: 
 			return False
 
+	# if the user is successfully authorized, return True. If authorization failed, return False
 	def authorize(self,accounts,accountId,pin):
-		if accountId not in accounts.keys():
-			print('Authorization failed due to invalid accountId')
-			return
-
 		if pin == accounts[accountId].getPin():
-			print(f'{accountId} successfully authorized')
 			self.setCurrentAccountId(accountId)
 			self.setAuthorizationTime()
+			return True
 		else:
-			print(f'Authorization failed.')
+			return False
 		
 	# the controller will call this after fetching the latest activity on the classes
 	def getBalance(self,accounts):
@@ -92,12 +92,10 @@ class Session:
 		overdrafting = False
 
 		balance = self.getBalance(accounts=accounts)
-		# assuming ATM has enough cash for the transaction
-		atmHadRequiredCash = True
+		newBalance = balance
 
 		# if the account is overdrafting, we remove an additional $5 from the account 
 		if balance - value < 0: 
-			value += 5
 			overdrafting = True
 
 		# the new currentCash balance of the ATM is the old value minus the value withdrawn
@@ -106,9 +104,9 @@ class Session:
 		# ...but what if this value is less than zero?
 		if atmNewCurrentCash < 0: 
 			# the ATM does not have enough cash for the transaction
-			atmHasRequiredCash = False
 			# the value withdrawn equals to all the money left in the ATM
 			value = atmCurrentCash
+			atmNewCurrentCash = 0
 
 			# maybe i'm a nice banker
 			# but if the ATM cannot afford to let the user overdraft,
@@ -116,11 +114,11 @@ class Session:
 			if overdrafting and balance - value >= 0:
 				overdrafting = False
 
-			#print("Unable to dispense full amount requested at this time.")
+		newBalance -= value
+		if overdrafting:
+			newBalance -= 5
 
-		newBalance = balance - value
-
-		atm.setCurrentCash(cash=atm.getCurrentCash()-value)
+		atm.setCurrentCash(cash=atmNewCurrentCash)
 		accounts[self.getCurrentAccountId()].setBalance(balance=newBalance)
 
 		if overdrafting:

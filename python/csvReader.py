@@ -25,7 +25,6 @@ class CsvReader:
 
 		# dataframe of banking info
 		# specifying that the first line of this file is a header
-		# todo: how do we want to handle duplicate account ids? override?
 		try: 
 			df = utilities.readCsv(relativePath=self.path,filename=self.filename)
 		except pd.errors.EmptyDataError as e:
@@ -34,8 +33,10 @@ class CsvReader:
 		return df
 
 	def createAccountsUsingDf(self,df):
-		# todo: handle empty dataframe
 		accounts = {}
+
+		if len(df) == 0:
+			return accounts
 
 		# iterating through the dataframe and keeping track of info for each account
 		for index, row in df.iterrows(): 
