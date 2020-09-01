@@ -134,7 +134,7 @@ class Controller:
 				return string
 			if value%20 != 0:
 				logging.warning(f"A withdrawal value that is not a multiple of $20 was passed into withdrawal function: value={value}")
-				string = f"Withdrawal amount must be a multiple of $20"
+				string = "Withdrawal amount must be a multiple of $20"
 				return string
 
 			# running the withdrawal and storing if the ATM had the required cash for the transaction
@@ -169,7 +169,7 @@ class Controller:
 
 		if authorized:
 			transactionHistory = self.getCurrentSession().history(accounts=self.getLatestAccountInfo())
-			if len(transactionHistory) is None:
+			if len(transactionHistory) == 0:
 				string = "No history found"
 			else: 
 				for transaction in transactionHistory: 

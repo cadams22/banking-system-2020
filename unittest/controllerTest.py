@@ -38,6 +38,24 @@ class TestController(unittest.TestCase):
 		self.assertEqual(controller.getCurrentSession().checkAuthorizationStatus(),True)
 		self.assertEqual(authorizationString,f"{accountId} successfully authorized")
 
+	# attempt to authorize when another user is already authorized
+	def testAuthorizeWithFakeId(self):
+		controller = Controller()
+		accountId = list(self.accounts.keys())[0]
+		authorizationString = controller.authorize(accountId="potato",pin=self.accounts[accountId].getPin())
+
+		self.assertEqual(authorizationString,"Authorization failed due to invalid accountId")
+
+	# attempt to authorize when another user is already authorized
+	def testAuthorizeOverlap(self):
+		controller = Controller()
+		accountId = list(self.accounts.keys())[0]
+		authorizationString = controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		accountId = list(self.accounts.keys())[1]
+		authorizationString = controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+
+		self.assertEqual(authorizationString,"Another user is already authorized. Please try again later")
+
 	def testBalance(self):
 		controller = Controller()
 		accountId = list(self.accounts.keys())[0]
@@ -48,6 +66,34 @@ class TestController(unittest.TestCase):
 		# check that the controller is getting the right balance
 		self.assertEqual(balance,self.accounts[accountId].getBalance())
 		self.assertEqual(balanceString,f"Current balance: {utilities.displayCash(balance)}")
+
+	def testTransactionsEmpty(self):
+		controller = Controller()
+		accountId = list(self.accounts.keys())[0]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		historyText = controller.history()
+		self.assertEqual(historyText,"No history found")
+
+	def testTransactions(self):
+		controller = Controller()
+		accountId = list(self.accounts.keys())[0]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+		depositValue = 40
+		withdrawalValue = 20
+		controller.deposit(value=depositValue)
+		controller.withdraw(value=withdrawalValue)
+		history = controller.history().splitlines()
+		self.assertEqual(len(history),2)
+		transactionOne = history[0].split(" ")
+		transactionTwo = history[1].split(" ")
+		# validating that transaction one and two have 4 attributes
+		self.assertEqual(len(transactionOne),4)
+		self.assertEqual(len(transactionTwo),4)
+
+		# testing withdrawal displays 1st since it's most recent 
+		# then testing that the values look as expected
+		self.assertEqual(transactionOne[2],utilities.displayCash(-withdrawalValue))
+		self.assertEqual(transactionTwo[2],utilities.displayCash(depositValue))
 
 	def testTransactionsAfterExpired(self):
 		controller = Controller()
@@ -72,7 +118,7 @@ class TestController(unittest.TestCase):
 		withdrawalString = controller.withdraw(value=100)
 		self.assertEqual(withdrawalString,authorizationReqString)
 
-	def testWithdrawlNotMultipleOf20(self):
+	def testWithdrawalNotMultipleOf20(self):
 		controller = Controller()
 
 		# get first item in the accounts dictionary
@@ -81,6 +127,26 @@ class TestController(unittest.TestCase):
 
 		withdrawalString = controller.withdraw(value=101)
 		self.assertEqual(withdrawalString,"Withdrawal amount must be a multiple of $20")
+
+	def testWithdrawalZero(self):
+		controller = Controller()
+
+		# get first item in the accounts dictionary
+		accountId = list(self.accounts.keys())[3]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+
+		withdrawalString = controller.withdraw(value=0)
+		self.assertEqual(withdrawalString,"Please request a withdrawal of a non-zero amount of money")
+
+	def testWithdrawalNegative(self):
+		controller = Controller()
+
+		# get first item in the accounts dictionary
+		accountId = list(self.accounts.keys())[3]
+		controller.authorize(accountId=accountId,pin=self.accounts[accountId].getPin())
+
+		withdrawalString = controller.withdraw(value=-1)
+		self.assertEqual(withdrawalString,"You must request a withdrawal a value greater than 0")
 
 	def testOverdrafts(self):
 		controller = Controller()
