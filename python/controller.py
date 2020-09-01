@@ -270,7 +270,7 @@ if __name__ == "__main__":
 				print(help(keyword=wordList[0]))
 				continue
 			value = int(wordList[1])
-			controller.deposit(value=value)
+			print(controller.deposit(value=value))
 		elif wordList[0] == "withdraw":
 			if len(wordList) != 2:
 				print(help(keyword=wordList[0]))
