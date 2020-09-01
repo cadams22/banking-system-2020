@@ -212,7 +212,7 @@ def help(keyword=None):
 	helpText["withdraw"] = "withdraw <value>"
 	if keyword is not None:
 		# all strings for a given keyword look the same
-		helpString = startString + keyword + ": " + helpText[keyword]
+		helpString = startText + keyword + ": " + helpText[keyword]
 		helpString += "\nFor additional syntax help, please type in the following command: help"
 
 	else:
